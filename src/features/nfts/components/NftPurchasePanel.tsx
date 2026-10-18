@@ -1,5 +1,8 @@
 import { Heart, Mail, Minus, Plus, Star } from "lucide-react";
 import type { Nft } from "@/contracts/nft";
+import { useCart } from "@/features/cart/cart-context";
+import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 interface NftPurchasePanelProps {
   nft: Nft;
@@ -14,6 +17,11 @@ function formatTokenId(id: string) {
 }
 
 export function NftPurchasePanel({ nft }: NftPurchasePanelProps) {
+
+  const { addItem } = useCart();
+  const [quantity, setQuantity] = useState(1);
+  const navigate = useNavigate();
+
   return (
     <div className="text-xs">
       <h1 className="text-2xl font-bold text-zinc-100">{nft.name}</h1>
@@ -62,24 +70,42 @@ export function NftPurchasePanel({ nft }: NftPurchasePanelProps) {
             type="button"
             aria-label="Diminuir quantidade"
             className="flex size-7 items-center justify-center rounded-full bg-[#d4893f] text-[#1a110d] hover:bg-[#e09a52]"
+            onClick={() =>
+                setQuantity((currentQuantity) =>
+                  Math.max(1, currentQuantity - 1),
+                )
+              }
           >
             <Minus className="size-3.5" aria-hidden="true" />
           </button>
-          <span className="text-sm text-zinc-100" aria-live="polite">
-            1
+          <span
+              className="text-sm text-zinc-100"
+              aria-live="polite"
+            >
+              {quantity}
           </span>
           <button
-            type="button"
-            aria-label="Aumentar quantidade"
-            className="flex size-7 items-center justify-center rounded-full bg-[#d4893f] text-[#1a110d] hover:bg-[#e09a52]"
-          >
-            <Plus className="size-3.5" aria-hidden="true" />
+              type="button"
+              aria-label="Aumentar quantidade"
+              onClick={() =>
+                setQuantity((currentQuantity) => currentQuantity + 1)
+              }
+              className="flex size-7 items-center justify-center rounded-full bg-[#d4893f] text-[#1a110d] hover:bg-[#e09a52]"
+            >
+              <Plus className="size-3.5" aria-hidden="true" />
           </button>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={() => {
+                addItem(nft, quantity);
+
+                navigate({
+                  to: "/cart",
+              });
+            }}
             className="rounded-sm bg-[#d4893f] px-10 py-2 text-[11px] font-medium text-[#1a110d] hover:bg-[#e09a52]"
           >
             COMPRAR

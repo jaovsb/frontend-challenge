@@ -10,29 +10,32 @@ interface CartProviderProps {
 export function CartProvider({ children }: CartProviderProps) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  function addItem(nft: Nft) {
+  function addItem(nft: Nft, quantity = 1) {
     setItems((currentItems) => {
-      const existingItem = currentItems.find(
-        (item) => item.nft.id === nft.id,
-      );
+        const existingItem = currentItems.find(
+            (item) => item.nft.id === nft.id,
+            );
 
-      if (existingItem) {
-        return currentItems.map((item) =>
-          item.nft.id === nft.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        );
-      }
+                if (existingItem) {
+                return currentItems.map((item) =>
+                    item.nft.id === nft.id
+                    ? {
+                        ...item,
+                        quantity: item.quantity + quantity,
+                        }
+                    : item,
+                );
+            }
 
-      return [
-        ...currentItems,
-        {
-          nft,
-          quantity: 1,
-        },
-      ];
-    });
-  }
+            return [
+                ...currentItems,
+                {
+                    nft,
+                    quantity,
+                },
+            ];
+        });
+    }
 
   function removeItem(nftId: string) {
     setItems((currentItems) =>

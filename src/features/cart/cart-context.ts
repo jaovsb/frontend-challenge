@@ -6,7 +6,7 @@ export interface CartContextValue {
   items: CartItem[];
   itemCount: number;
   total: number;
-  addItem: (nft: Nft) => void;
+  addItem: (nft: Nft, quantity?: number) => void;
   removeItem: (nftId: string) => void;
   updateQuantity: (nftId: string, quantity: number) => void;
   clearCart: () => void;
