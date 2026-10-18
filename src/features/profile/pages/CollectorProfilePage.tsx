@@ -4,6 +4,7 @@ import { ChevronDown, Eye, EyeOff, User, Check } from "lucide-react";
 import { Header } from "@/features/home/components/Header";
 import { useAuth } from "@/features/auth/auth-context";
 import { ProfileSidebar } from "@/features/profile/components/ProfileSidebar";
+import { Button } from "@/components/ui/button";
 
 export function CollectorProfilePage() {
   const { user } = useAuth();
@@ -313,12 +314,14 @@ export function CollectorProfilePage() {
 
               {/* Submit action */}
               <div className="flex justify-end pt-2">
-                <button
+                <Button
                   type="submit"
-                  className="bg-[#d4893f] text-[#1a110d] font-bold text-xs px-7 py-2 rounded-none hover:bg-[#e09a52] transition-colors"
+                  variant={null}
+                  size={null}
+                  className="h-auto border-0 bg-[#d4893f] text-[#1a110d] font-bold text-xs px-7 py-2 rounded-none hover:bg-[#e09a52] transition-colors active:not-aria-[haspopup]:translate-y-0"
                 >
                   Salvar
-                </button>
+                </Button>
               </div>
             </form>
           </section>

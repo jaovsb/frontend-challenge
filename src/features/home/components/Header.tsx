@@ -1,4 +1,4 @@
-import { Search, ShoppingCart } from "lucide-react";
+import { Search, ShoppingCart, User } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/features/auth/auth-context";
 import { useCart } from "@/features/cart/cart-context";
@@ -20,13 +20,13 @@ export function Header() {
     } = useAuth();
   return (
     <header className="border-b border-[#2e1d16] bg-[#140d0a]">
-      <div className="mx-auto grid h-14 max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center px-4 xl:px-0">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-[1fr_auto] items-center gap-y-2 px-4 py-3 lg:h-14 lg:grid-cols-[1fr_auto_1fr] lg:gap-y-0 lg:py-0 xl:px-0">
         <Link to="/" hash="" resetScroll className="text-sm font-bold tracking-widest text-zinc-100">
           KURIO
         </Link>
 
-        <nav aria-label="Navegação principal">
-          <ul className="flex items-center gap-6 text-xs sm:gap-8">
+        <nav aria-label="Navegação principal" className="order-last col-span-2 min-w-0 lg:order-none lg:col-span-1">
+          <ul className="flex items-center justify-between gap-3 text-xs sm:gap-8 lg:justify-start">
             {navItems.map((item, index) => (
               <li key={item.label}>
                 <Link
@@ -48,7 +48,7 @@ export function Header() {
           </ul>
         </nav>
 
-        <div className="flex items-center justify-end gap-4">
+        <div className="flex items-center justify-end gap-2 lg:gap-4">
           <button type="button" aria-label="Buscar" className="text-zinc-300 hover:text-zinc-100">
             <Search className="size-4" aria-hidden="true" />
           </button>
@@ -69,9 +69,11 @@ export function Header() {
             <div className="flex items-center gap-3">
               <Link
                 to="/profile"
-                className="inline-flex min-h-9 items-center text-xs text-zinc-100 hover:text-[#d4893f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4893f]"
+                aria-label={user?.name ?? "Meu perfil"}
+                className="inline-flex min-h-9 min-w-9 items-center justify-center text-xs text-zinc-100 hover:text-[#d4893f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4893f] lg:min-w-0"
               >
-                {user?.name}
+                <User className="size-4 lg:hidden" aria-hidden="true" />
+                <span className="hidden lg:inline">{user?.name}</span>
               </Link>
 
               <button

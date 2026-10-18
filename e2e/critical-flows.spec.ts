@@ -24,10 +24,14 @@ async function addNftToCart(page: Page, quantity = 1, nft = { id: "nft-2", name:
 
 async function login(page: Page, email = "collector@kurio.test", name = "Mock Collector") {
   await page.goto("/login");
+  await completeLogin(page, "/", email, name);
+}
+
+async function completeLogin(page: Page, destination: string, email = "collector@kurio.test", name = "Mock Collector") {
   await page.getByRole("textbox", { name: "E-mail", exact: true }).fill(email);
   await page.getByLabel("Senha", { exact: true }).fill("123456");
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(destination);
   await expect(page.getByRole("banner").getByText(name, { exact: true })).toBeVisible();
 }
 
@@ -128,7 +132,11 @@ test("carrinho preserva item, quantidade alterada e subtotal após F5", async ({
 test("checkout acompanha pending → order.updated → confirmed e só então esvazia o carrinho", async ({ page }) => {
   await addNftToCart(page);
   await page.getByRole("link", { name: "Conectar e finalizar", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\?redirect=/);
+  expect(new URL(page.url()).searchParams.get("redirect")).toBe("/checkout");
+  await completeLogin(page, "/checkout");
   await expect(page).toHaveURL("/checkout");
+  await expect(page.getByRole("article", { name: nftName, exact: true })).toBeVisible();
 
   await page.getByLabel("Nome de exibição", { exact: false }).fill("E2E Collector");
   await page.getByLabel("Nome de usuário", { exact: false }).fill("e2e-collector");
@@ -157,7 +165,7 @@ test("checkout acompanha pending → order.updated → confirmed e só então es
   await expect(page).toHaveURL("/order-confirmation");
   await expect(page.getByRole("status")).toHaveText("Seu pedido está sendo processado");
   await expect(page.getByText("Aguardando confirmação", { exact: true })).toBeVisible();
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("kurio-cart:guest") ?? "[]"))).toHaveLength(1);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("kurio-cart:user-collector") ?? "[]"))).toHaveLength(1);
 
   const event = await (await updatedMessage).args()[1].jsonValue() as OrderUpdatedPayload;
   expect(event).toMatchObject({ id: pending.id, status: "confirmed" });
@@ -192,7 +200,37 @@ test("login autentica e mantém a sessão visível após F5", async ({ page }) =
   await header.getByRole("link", { name: "Mock Collector", exact: true }).click();
   await expect(page).toHaveURL("/profile");
   await expect(page.getByRole("heading", { name: "Perfil do colecionador", exact: true })).toBeVisible();
-  await page.goBack();
+  const sidebar = page.getByRole("complementary", { name: "Menu do perfil", exact: true });
+  await expect(sidebar.getByRole("link", { name: "Dados do perfil", exact: true })).toHaveAttribute("aria-current", "page");
+  await sidebar.getByRole("link", { name: "Carteiras", exact: true }).click();
+  await expect(page).toHaveURL("/profile/wallets");
+  await expect(sidebar.getByRole("link", { name: "Carteiras", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("button", { name: "Salvar carteira", exact: true })).toHaveAttribute("data-slot", "button");
+  await sidebar.getByRole("link", { name: "Dados do perfil", exact: true }).click();
+  await expect(page).toHaveURL("/profile");
+  const saveProfile = page.getByRole("button", { name: "Salvar", exact: true });
+  await expect(saveProfile).toHaveAttribute("data-slot", "button");
+  await saveProfile.click();
+  await expect(page.getByRole("status")).toHaveText("Dados do perfil salvos com sucesso!");
+
+  await addNftToCart(page, 2);
+  await page.goto("/profile");
+  for (const [width, height] of [[375, 812], [390, 844], [414, 896], [430, 932], [1440, 1080]]) {
+    await page.setViewportSize({ width, height });
+    await header.getByRole("link", { name: "Mock Collector", exact: true }).click();
+    await expect(page).toHaveURL("/profile");
+    for (const destination of ["Carteiras", "Dados do perfil"]) {
+      await sidebar.getByRole("link", { name: destination, exact: true }).click();
+      await expect(page).toHaveURL(destination === "Carteiras" ? "/profile/wallets" : "/profile");
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      await expect(header.getByRole("link", { name: "Mock Collector", exact: true })).toBeInViewport();
+      await expect(header.getByRole("button", { name: "Sair", exact: true })).toBeInViewport();
+      const cart = header.getByRole("link", { name: "Carrinho com 2 item(ns)", exact: true });
+      await expect(cart).toBeInViewport();
+      await expect(cart.getByText("2", { exact: true })).toBeVisible();
+    }
+  }
+  await page.getByRole("navigation", { name: "Breadcrumb", exact: true }).getByRole("link", { name: "Início", exact: true }).click();
   await expect(page).toHaveURL("/");
   await header.getByRole("button", { name: "Sair", exact: true }).click();
   await expect(header.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
@@ -221,29 +259,40 @@ test("cadastro valida confirmação da senha e autentica uma conta nova", async 
   await expect(page.getByRole("banner").getByRole("button", { name: "Sair", exact: true })).toBeVisible();
 });
 
-test("guest, Collector e Creator têm carrinhos isolados e recuperáveis após logout", async ({ page }) => {
-  await addNftToCart(page, 2);
+test("guest é mesclado uma vez e carrinhos privados permanecem isolados", async ({ page }) => {
   await login(page);
   const header = page.getByRole("banner");
-  await expect(header.getByRole("link", { name: "Carrinho com 0 item(ns)", exact: true })).toBeVisible();
-
   const collectorNft = { id: "nft-3", name: "Bored Ape #186" };
+  const guestNft = { id: "nft-1", name: "Bored Ape #402" };
+  await addNftToCart(page, 2);
   await addNftToCart(page, 1, collectorNft);
+  await header.getByRole("button", { name: "Sair", exact: true }).click();
+  await expect(page.getByText("Carrinho vazio.", { exact: true })).toBeVisible();
+
+  await addNftToCart(page, 2, guestNft);
+  await addNftToCart(page, 1);
   await page.reload();
+  await expect(page.getByRole("article", { name: guestNft.name, exact: true }).getByText("2", { exact: true })).toBeVisible();
+  await expect(page.getByRole("article", { name: nftName, exact: true }).getByText("1", { exact: true })).toBeVisible();
+  await login(page);
   await expect(header.getByText("Mock Collector", { exact: true })).toBeVisible();
-  await expect(header.getByRole("link", { name: "Carrinho com 1 item(ns)", exact: true })).toBeVisible();
+  await header.getByRole("link", { name: "Carrinho com 6 item(ns)", exact: true }).click();
+  await expect(page.getByRole("article", { name: guestNft.name, exact: true }).getByText("2", { exact: true })).toBeVisible();
+  await expect(page.getByRole("article", { name: nftName, exact: true }).getByText("3", { exact: true })).toBeVisible();
   await expect(page.getByRole("article", { name: collectorNft.name, exact: true })).toBeVisible();
+  await page.reload();
+  await expect(header.getByRole("link", { name: "Carrinho com 6 item(ns)", exact: true })).toBeVisible();
   await header.getByRole("button", { name: "Sair", exact: true }).click();
 
   await expect(header.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
   await expect(header.getByText("Mock Collector", { exact: true })).toHaveCount(0);
   await expect(header.getByRole("button", { name: "Sair", exact: true })).toHaveCount(0);
-  await expect(header.getByRole("link", { name: "Carrinho com 2 item(ns)", exact: true })).toBeVisible();
+  await expect(header.getByRole("link", { name: "Carrinho com 0 item(ns)", exact: true })).toBeVisible();
   await expect(page.getByRole("article", { name: collectorNft.name, exact: true })).toHaveCount(0);
-  await expect(page.getByRole("article", { name: nftName, exact: true }).getByText("2", { exact: true })).toBeVisible();
+  await expect(page.getByText("Carrinho vazio.", { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("link", { name: "Entrar", exact: true })).toBeVisible();
-  await expect(page.getByRole("article", { name: nftName, exact: true }).getByText("2", { exact: true })).toBeVisible();
+  await expect(page.getByText("Carrinho vazio.", { exact: true })).toBeVisible();
 
   await login(page, "creator@kurio.test", "Mock Creator");
   await expect(header.getByRole("link", { name: "Carrinho com 0 item(ns)", exact: true })).toBeVisible();
@@ -253,10 +302,31 @@ test("guest, Collector e Creator têm carrinhos isolados e recuperáveis após l
   await expect(header.getByText("Mock Creator", { exact: true })).toBeVisible();
   await expect(page.getByText("Carrinho vazio.", { exact: true })).toBeVisible();
   await header.getByRole("button", { name: "Sair", exact: true }).click();
-  await expect(header.getByRole("link", { name: "Carrinho com 2 item(ns)", exact: true })).toBeVisible();
+  await expect(header.getByRole("link", { name: "Carrinho com 0 item(ns)", exact: true })).toBeVisible();
 
   await login(page);
-  await header.getByRole("link", { name: "Carrinho com 1 item(ns)", exact: true }).click();
+  await header.getByRole("link", { name: "Carrinho com 6 item(ns)", exact: true }).click();
   await expect(page.getByRole("article", { name: collectorNft.name, exact: true }).getByText("1", { exact: true })).toBeVisible();
-  await expect(page.getByRole("article", { name: nftName, exact: true })).toHaveCount(0);
+  await expect(page.getByRole("article", { name: nftName, exact: true }).getByText("3", { exact: true })).toBeVisible();
+  await expect(page.getByRole("article", { name: guestNft.name, exact: true }).getByText("2", { exact: true })).toBeVisible();
+});
+
+test("rotas privadas exigem login, preservam retorno e rejeitam redirects externos", async ({ page }) => {
+  for (const path of ["/checkout", "/profile", "/order-confirmation", "/profile/wallets"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/login\?redirect=/);
+    expect(new URL(page.url()).searchParams.get("redirect")).toBe(path);
+    await expect(page.getByLabel("Senha", { exact: true })).toBeVisible();
+  }
+  await completeLogin(page, "/profile/wallets");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Carteira principal", exact: true })).toBeVisible();
+  await page.getByRole("complementary", { name: "Menu do perfil", exact: true }).getByRole("button", { name: "Sair", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\?redirect=/);
+
+  for (const invalid of ["https://example.com", "//example.com", "/\\example.com"]) {
+    await page.goto(`/login?redirect=${encodeURIComponent(invalid)}`);
+    await completeLogin(page, "/");
+    await page.getByRole("banner").getByRole("button", { name: "Sair", exact: true }).click();
+  }
 });

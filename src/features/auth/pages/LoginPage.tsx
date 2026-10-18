@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { getSafeAuthRedirect } from "../redirect";
 import { useAuth } from "@/features/auth/auth-context";
 import { useLogin } from "@/features/auth/mutations";
 import { AuthModal } from "@/features/auth/components/AuthModal";
@@ -8,6 +9,7 @@ import { AuthSocialButtons } from "@/features/auth/components/AuthSocialButtons"
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { redirect } = useSearch({ from: "/login" });
   const { setSession } = useAuth();
   const loginMutation = useLogin();
 
@@ -27,7 +29,7 @@ export function LoginPage() {
           setSession(response.user, response.token);
 
           navigate({
-            to: "/",
+            href: getSafeAuthRedirect(redirect),
           });
         },
       },
@@ -36,6 +38,7 @@ export function LoginPage() {
 
   return (
     <AuthModal
+      redirect={redirect}
       activeTab="login"
       subtitle="Entre para gerenciar sua carteira, coleção e perfil de criador."
       mobileTitle="Entrar"
@@ -44,6 +47,7 @@ export function LoginPage() {
           Novo na Kurio?{" "}
           <Link
             to="/register"
+            search={redirect ? { redirect } : {}}
             className="text-zinc-300 font-bold hover:text-[#d4893f] transition-colors"
           >
             Crie uma conta

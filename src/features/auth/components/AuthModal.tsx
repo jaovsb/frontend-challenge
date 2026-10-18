@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import App from "@/App";
 
 interface AuthModalProps {
+  redirect?: string;
   activeTab: "login" | "register";
   subtitle: string;
   mobileTitle?: string;
@@ -12,6 +13,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({
+  redirect,
   activeTab,
   subtitle,
   mobileTitle,
@@ -58,6 +60,7 @@ export function AuthModal({
           <div className="hidden lg:block text-center font-bold text-base tracking-wide mb-3">
             <Link
               to="/login"
+              search={redirect ? { redirect } : {}}
               className={
                 activeTab === "login"
                   ? "text-[#d4893f]"
@@ -69,6 +72,7 @@ export function AuthModal({
             <span className="text-[#d4893f] mx-2 font-light">|</span>
             <Link
               to="/register"
+              search={redirect ? { redirect } : {}}
               className={
                 activeTab === "register"
                   ? "text-[#d4893f]"

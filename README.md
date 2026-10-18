@@ -14,11 +14,12 @@ As APIs, os pagamentos e as carteiras são simulados. Não há integração com 
 - Marketplace com 12 NFTs, listagem e página de detalhe.
 - Busca por nome, filtro por faixa de preço, ordenação por nome/preço e paginação no frontend, com parâmetros na URL da Home.
 - Carrinho com inclusão, remoção, alteração de quantidades e totais derivados dos itens.
-- Carrinho persistente por visitante/usuário: refresh mantém os itens da identidade ativa; login e logout carregam carrinhos separados, sem misturar itens.
+- Carrinho persistente por visitante/usuário: ao autenticar, os itens guest são mesclados ao carrinho do usuário e o guest é esvaziado. Logout e troca de usuário mantêm os carrinhos privados isolados.
 - Checkout com formulário, seleção de rede/carteira e resumo da compra.
 - Pedidos com estados `pending`, `confirmed` e `rejected`, consulta por ID e criação idempotente.
 - Confirmação automática do pedido por realtime; o carrinho é limpo somente quando o pedido está confirmado.
 - Login, cadastro com confirmação de senha, logout e sessão persistida no navegador.
+- Checkout, perfil, carteiras e confirmação de pedido exigem autenticação e retornam ao destino interno solicitado após login ou cadastro.
 - Telas de perfil do colecionador e carteiras com formulários e feedback simulado. As alterações dessas telas ficam no estado local, sem persistência ou API própria.
 - Eventos `nft.updated` e `order.updated` com Socket.IO e MSW.
 - Layouts desktop e mobile, incluindo componentes específicos para Home, detalhe e checkout.
@@ -37,6 +38,7 @@ As APIs, os pagamentos e as carteiras são simulados. Não há integração com 
 | API simulada | MSW |
 | Realtime | Socket.IO Client e `@mswjs/socket.io-binding` |
 | Ícones | Lucide React |
+| Componentes | shadcn/ui: Button existente, baseado em Base UI, nas ações de salvar perfil e carteira |
 | Testes E2E | Playwright |
 | Análise estática | ESLint |
 
@@ -128,10 +130,12 @@ A suíte em `e2e/critical-flows.spec.ts` cobre:
 
 1. **Catálogo → detalhe → carrinho:** abre um NFT, aumenta a quantidade e verifica item, quantidade e subtotal no carrinho.
 2. **Persistência do carrinho:** altera a quantidade, recarrega a página e confere itens e valores.
-3. **Checkout e realtime:** verifica o POST com estado `pending`, aguarda `order.updated`, confere a confirmação e o identificador da transação, reconcilia por REST e verifica o carrinho vazio.
+3. **Checkout e realtime:** verifica o retorno do login ao checkout com o carrinho preservado, o POST com estado `pending`, o evento `order.updated`, a confirmação e a reconciliação REST, seguida do carrinho vazio.
 4. **Login:** autentica com a fixture e verifica a sessão no Header após refresh.
 5. **Cadastro:** verifica senhas divergentes e, após a correção, cria uma conta com e-mail único e confere a autenticação.
-6. **Isolamento de carrinhos:** verifica a separação entre visitante, Collector e Creator, a persistência após refresh e a recuperação do carrinho do Collector ao entrar novamente.
+6. **Merge e isolamento de carrinhos:** verifica a transferência dos itens guest, a soma de quantidades duplicadas, persistência após refresh, consumo único do guest e isolamento entre Collector e Creator.
+
+Uma verificação adicional cobre acesso direto às quatro rotas privadas, retorno após login, sessão após F5 e rejeição de redirects externos. A navegação entre perfil e carteiras e os botões shadcn também são exercitados.
 
 Os testes exercitam a aplicação com MSW e Socket.IO, sem injetar eventos no cache. O relatório HTML fica em `e2e/artifacts/report/`; screenshots e traces são mantidos para falhas em `e2e/artifacts/results/`. Os artefatos são ignorados pelo Git.
 
@@ -150,7 +154,7 @@ Para repetir a mudança inicial de preço, remova `kurio-realtime-nft-1-price` d
 
 - **TanStack Query:** consultas, mutations e sincronização de estado remoto. O padrão global usa `staleTime` de 30 segundos e uma tentativa adicional; pedidos usam dados imediatamente obsoletos para reconciliação.
 - **Context API:** estado compartilhado de carrinho e autenticação, separado do cache remoto.
-- **localStorage:** persiste os itens em `kurio-cart:guest` para visitantes e `kurio-cart:<user.id>` para usuários autenticados; a sessão visual usa `kurio-auth`. Login e logout trocam o namespace ativo sem apagar os outros carrinhos. A chave legada `kurio-cart` é ignorada, sem migração, pois sua identidade de origem é desconhecida. Contagem e total continuam derivados dos itens.
+- **localStorage:** persiste os itens em `kurio-cart:guest` para visitantes e `kurio-cart:<user.id>` para usuários autenticados; a sessão visual usa `kurio-auth`. Na autenticação, o guest é mesclado por `nft.id`, somando quantidades; após gravar o resultado, o guest é consumido para evitar reimportação. Logout troca para o guest vazio sem apagar carrinhos privados. A chave legada `kurio-cart` permanece ignorada. Contagem e total continuam derivados dos itens.
 - **sessionStorage:** guarda o snapshot necessário ao recibo em `lastOrder`, os pedidos simulados em `kurio-mock-orders` e a chave da tentativa de checkout.
 - **Idempotência:** a mesma `idempotencyKey` e o mesmo conteúdo recuperam o pedido existente; conteúdo diferente com a mesma chave retorna HTTP `409`.
 - **REST + Socket.IO:** o evento sinaliza mudanças e o REST permite reconciliar o estado. Ambos utilizam os mesmos dados do mock.
@@ -163,7 +167,7 @@ Resultados da validação informada para a versão avaliada:
 | --- | --- |
 | ESLint | Passando |
 | Build de produção | Passando |
-| E2E em Chromium | 6/6 |
+| E2E em Chromium | 7/7 |
 
 Lighthouse em **mobile, com build de produção**:
 

@@ -13,6 +13,8 @@ import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { RegisterPage } from "@/features/auth/pages/RegisterPage";
 import { CollectorProfilePage } from "@/features/profile/pages/CollectorProfilePage";
 import { WalletsPage } from "@/features/profile/pages/WalletsPage";
+import { RequireAuth } from "@/features/auth/components/RequireAuth";
+import { validateAuthSearch } from "@/features/auth/redirect";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -39,37 +41,39 @@ const cartRoute = createRoute({
 const checkoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/checkout",
-  component: CheckoutPage,
+  component: () => <RequireAuth><CheckoutPage /></RequireAuth>,
 });
 
 const orderConfirmationRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/order-confirmation",
-  component: OrderConfirmationPage,
+  component: () => <RequireAuth><OrderConfirmationPage /></RequireAuth>,
 });
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
+  validateSearch: validateAuthSearch,
   component: LoginPage,
 });
 
 const registerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/register",
+  validateSearch: validateAuthSearch,
   component: RegisterPage,
 });
 
 const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile",
-  component: CollectorProfilePage,
+  component: () => <RequireAuth><CollectorProfilePage /></RequireAuth>,
 });
 
 const walletsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profile/wallets",
-  component: WalletsPage,
+  component: () => <RequireAuth><WalletsPage /></RequireAuth>,
 });
 
 const routeTree = rootRoute.addChildren([

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Nft } from "@/contracts/nft";
 import { useAuth } from "@/features/auth/auth-context";
 import { CartContext } from "./cart-context";
@@ -35,7 +35,7 @@ export function CartProvider({ children }: CartProviderProps) {
   const storageKey = `kurio-cart:${user?.id ?? "guest"}`;
 
   // A new identity gets fresh state before its children render. The old cart
-  // can only persist to its own key; items never cross session boundaries.
+  // can only persist to its own key; private carts never cross user boundaries.
   // The ambiguous legacy "kurio-cart" key is intentionally ignored.
   return (
     <IdentityCartProvider key={storageKey} storageKey={storageKey}>
@@ -45,11 +45,11 @@ export function CartProvider({ children }: CartProviderProps) {
 }
 
 function IdentityCartProvider({ children, storageKey }: IdentityCartProviderProps) {
-  const [items, setItems] = useState<CartItem[]>(() => {
+  function readCart(key: string): CartItem[] {
     if (typeof window === "undefined") return [];
 
     try {
-      const savedCart = window.localStorage.getItem(storageKey);
+      const savedCart = window.localStorage.getItem(key);
       if (savedCart === null) return [];
 
       const parsed: unknown = JSON.parse(savedCart);
@@ -59,17 +59,37 @@ function IdentityCartProvider({ children, storageKey }: IdentityCartProviderProp
     }
 
     try {
-      window.localStorage.removeItem(storageKey);
+      window.localStorage.removeItem(key);
     } catch {
       // Storage may be blocked by the browser.
     }
 
     return [];
+  }
+
+  const [items, setItems] = useState<CartItem[]>(() => {
+    const ownItems = readCart(storageKey);
+    if (storageKey === "kurio-cart:guest") return ownItems;
+
+    // Pure merge: both StrictMode initializations see the same inputs. Storage
+    // is only consumed after the merged cart has been committed successfully.
+    const merged = ownItems.map((item) => ({ ...item }));
+    for (const guestItem of readCart("kurio-cart:guest")) {
+      const existing = merged.find((item) => item.nft.id === guestItem.nft.id);
+      if (existing) existing.quantity += guestItem.quantity;
+      else merged.push({ ...guestItem });
+    }
+    return merged;
   });
+  const guestConsumed = useRef(false);
 
   useEffect(() => {
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(items));
+      if (storageKey !== "kurio-cart:guest" && !guestConsumed.current) {
+        window.localStorage.removeItem("kurio-cart:guest");
+        guestConsumed.current = true;
+      }
     } catch {
       // Keep the in-memory cart usable if persistence is unavailable.
     }

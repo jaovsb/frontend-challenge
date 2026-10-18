@@ -9,6 +9,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/auth-context";
+import { Link } from "@tanstack/react-router";
 
 export type ProfileNavItem =
   | "profile"
@@ -24,9 +25,9 @@ interface ProfileSidebarProps {
   onNavigate?: (item: ProfileNavItem) => void;
 }
 
-const navItems: Array<{ id: ProfileNavItem; label: string; icon: typeof User; href?: string }> = [
-  { id: "profile", label: "Dados do perfil", icon: User },
-  { id: "wallets", label: "Carteiras", icon: MapPin },
+const navItems: Array<{ id: ProfileNavItem; label: string; icon: typeof User; to?: "/profile" | "/profile/wallets" }> = [
+  { id: "profile", label: "Dados do perfil", icon: User, to: "/profile" },
+  { id: "wallets", label: "Carteiras", icon: MapPin, to: "/profile/wallets" },
   { id: "activity", label: "Atividade", icon: ShoppingCart },
   { id: "wishlist", label: "Lista de interesse", icon: Heart },
   { id: "offers", label: "Ofertas", icon: TrendingUp },
@@ -53,25 +54,30 @@ export function ProfileSidebar({ activeItem, onNavigate }: ProfileSidebarProps) 
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
+            const className = `w-full flex items-center gap-3 px-4 py-2.5 text-left border-l-2 transition-colors ${
+              isActive
+                ? "border-[#d4893f] bg-[#1a100c] text-[#d4893f] font-medium"
+                : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-[#2b1b16]"
+            }`;
+            const content = <>
+              <Icon className={`size-4 shrink-0 ${isActive ? "text-[#d4893f]" : "text-zinc-400"}`} aria-hidden="true" />
+              <span>{item.label}</span>
+            </>;
 
             return (
               <li key={item.id}>
-                <button
+                {item.to ? (
+                  <Link to={item.to} className={className} aria-current={isActive ? "page" : undefined}>
+                    {content}
+                  </Link>
+                ) : <button
                   type="button"
                   onClick={() => handleItemClick(item.id)}
                   aria-current={isActive ? "page" : undefined}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left border-l-2 transition-colors ${
-                    isActive
-                      ? "border-[#d4893f] bg-[#1a100c] text-[#d4893f] font-medium"
-                      : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-[#2b1b16]"
-                  }`}
+                  className={className}
                 >
-                  <Icon
-                    className={`size-4 shrink-0 ${isActive ? "text-[#d4893f]" : "text-zinc-400"}`}
-                    aria-hidden="true"
-                  />
-                  <span>{item.label}</span>
-                </button>
+                  {content}
+                </button>}
               </li>
             );
           })}

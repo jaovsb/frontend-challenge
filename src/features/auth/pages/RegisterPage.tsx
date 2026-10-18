@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { getSafeAuthRedirect } from "../redirect";
 import { useAuth } from "@/features/auth/auth-context";
 import { useRegister } from "@/features/auth/mutations";
 import { AuthModal } from "@/features/auth/components/AuthModal";
@@ -8,6 +9,7 @@ import { AuthSocialButtons } from "@/features/auth/components/AuthSocialButtons"
 
 export function RegisterPage() {
   const navigate = useNavigate();
+  const { redirect } = useSearch({ from: "/register" });
   const { setSession } = useAuth();
   const registerMutation = useRegister();
 
@@ -38,7 +40,7 @@ export function RegisterPage() {
           setSession(response.user, response.token);
 
           navigate({
-            to: "/",
+            href: getSafeAuthRedirect(redirect),
           });
         },
       },
@@ -47,6 +49,7 @@ export function RegisterPage() {
 
   return (
     <AuthModal
+      redirect={redirect}
       activeTab="register"
       subtitle="Crie seu perfil de colecionador e conecte uma carteira quando quiser."
       mobileTitle="Criar perfil de colecionador"
@@ -55,6 +58,7 @@ export function RegisterPage() {
           Já tem uma conta?{" "}
           <Link
             to="/login"
+            search={redirect ? { redirect } : {}}
             className="text-zinc-300 font-bold hover:text-[#d4893f] transition-colors"
           >
             Entre

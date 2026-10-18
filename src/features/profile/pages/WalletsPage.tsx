@@ -4,6 +4,7 @@ import { ChevronDown, Check } from "lucide-react";
 import { Header } from "@/features/home/components/Header";
 import { useAuth } from "@/features/auth/auth-context";
 import { ProfileSidebar } from "@/features/profile/components/ProfileSidebar";
+import { Button } from "@/components/ui/button";
 
 export function WalletsPage() {
   const { user } = useAuth();
@@ -282,12 +283,14 @@ export function WalletsPage() {
 
                 {/* Submit action */}
                 <div className="pt-2">
-                  <button
+                  <Button
                     type="submit"
-                    className="bg-[#d4893f] text-[#1a110d] font-bold text-xs px-5 py-2 rounded-none hover:bg-[#e09a52] transition-colors"
+                    variant={null}
+                    size={null}
+                    className="h-auto border-0 bg-[#d4893f] text-[#1a110d] font-bold text-xs px-5 py-2 rounded-none hover:bg-[#e09a52] transition-colors active:not-aria-[haspopup]:translate-y-0"
                   >
                     Salvar carteira
-                  </button>
+                  </Button>
                 </div>
               </form>
             </section>
