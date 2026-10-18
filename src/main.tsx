@@ -11,7 +11,7 @@ import './index.css'
 
 async function bootstrap() {
   await worker.start({
-    onUnhandledFrame: "bypass",
+    onUnhandledRequest: "bypass",
   });
 
   const { startRealtime } = await import("./realtime/socket");
