@@ -6,7 +6,7 @@ export function AuthSocialButtons() {
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-[#3a2416]" />
         </div>
-        <span className="relative bg-[#241612] px-3 text-[10px] text-zinc-400">
+        <span className="relative bg-[#140d0a] lg:bg-[#241612] px-3 text-[10px] text-zinc-400">
           Ou continue com
         </span>
       </div>
@@ -15,7 +15,7 @@ export function AuthSocialButtons() {
       <div className="space-y-2">
         <button
           type="button"
-          className="w-full border border-[#3a2416] bg-[#1a110d] hover:bg-[#20140f] py-2 px-4 text-xs text-zinc-200 flex items-center justify-center gap-2 rounded-none transition-colors"
+          className="w-full border border-[#3a2416] bg-[#1a110d] hover:bg-[#20140f] py-3 lg:py-2 px-4 text-xs text-zinc-200 flex items-center justify-center gap-2 rounded-xl lg:rounded-none transition-colors"
         >
           <svg className="size-3.5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
             <path
@@ -40,7 +40,7 @@ export function AuthSocialButtons() {
 
         <button
           type="button"
-          className="w-full border border-[#3a2416] bg-[#1a110d] hover:bg-[#20140f] py-2 px-4 text-xs text-zinc-200 flex items-center justify-center gap-2 rounded-none transition-colors"
+          className="w-full border border-[#3a2416] bg-[#1a110d] hover:bg-[#20140f] py-3 lg:py-2 px-4 text-xs text-zinc-200 flex items-center justify-center gap-2 rounded-xl lg:rounded-none transition-colors"
         >
           <svg
             className="size-3.5 shrink-0 fill-[#1877F2]"

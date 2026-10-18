@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/features/auth/auth-context";
 import { useLogin } from "@/features/auth/mutations";
 import { AuthModal } from "@/features/auth/components/AuthModal";
@@ -38,6 +38,18 @@ export function LoginPage() {
     <AuthModal
       activeTab="login"
       subtitle="Entre para gerenciar sua carteira, coleção e perfil de criador."
+      mobileTitle="Entrar"
+      mobileFooter={
+        <p>
+          Novo na Kurio?{" "}
+          <Link
+            to="/register"
+            className="text-zinc-300 font-bold hover:text-[#d4893f] transition-colors"
+          >
+            Crie uma conta
+          </Link>
+        </p>
+      }
     >
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* Email field */}
@@ -53,7 +65,7 @@ export function LoginPage() {
             placeholder="contato@email.com"
             required
             autoComplete="email"
-            className="w-full bg-[#1a110d] border border-[#3a2416] text-xs text-zinc-100 placeholder:text-zinc-500 h-10 px-3 rounded-none focus:outline-none focus:border-[#d4893f]"
+            className="w-full bg-[#1a110d] border border-[#3a2416] text-xs text-zinc-100 placeholder:text-zinc-500 h-12 lg:h-10 px-4 lg:px-3 rounded-xl lg:rounded-none focus:outline-none focus:border-[#d4893f]"
           />
         </div>
 
@@ -87,7 +99,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={loginMutation.isPending}
-          className="w-full bg-[#d4893f] hover:bg-[#e09a52] text-[#1a110d] font-bold py-2.5 text-xs rounded-none transition-colors disabled:opacity-50 mt-3"
+          className="w-full bg-[#c88243] hover:bg-[#d4893f] text-[#140d0a] font-bold py-3.5 lg:py-2.5 text-xs rounded-xl lg:rounded-none transition-colors disabled:opacity-50 mt-4 lg:mt-3 cursor-pointer"
         >
           {loginMutation.isPending ? "Entrando..." : "Entrar"}
         </button>

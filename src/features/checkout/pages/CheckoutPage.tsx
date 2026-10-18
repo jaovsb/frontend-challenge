@@ -7,6 +7,7 @@ import { TrustSection } from "@/features/home/components/TrustSection";
 import { Footer } from "@/features/home/components/Footer";
 import { CheckoutForm } from "@/features/checkout/components/CheckoutForm";
 import { CheckoutSummary } from "@/features/checkout/components/CheckoutSummary";
+import { MobileCheckout } from "@/features/checkout/components/MobileCheckout";
 
 const NETWORK_FEE = 0.016;
 
@@ -27,7 +28,9 @@ export function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen overflow-x-hidden bg-[#1a110d] font-mono text-zinc-100">
-        <Header />
+        <div className="hidden lg:block">
+          <Header />
+        </div>
         <main className="mx-auto max-w-[1200px] px-4 pt-6 xl:px-0">
           <nav aria-label="Breadcrumb" className="text-[11px] text-zinc-100">
             <ol className="flex items-center gap-1">
@@ -47,25 +50,25 @@ export function CheckoutPage() {
             </ol>
           </nav>
 
-          <div className="my-16 rounded-sm bg-[#241612] p-8 text-center text-xs text-zinc-400">
+          <div className="my-16 rounded-2xl lg:rounded-sm bg-[#241612] border border-[#3a2416] p-8 text-center text-xs text-zinc-400">
             <p className="text-sm font-bold text-zinc-200">Seu carrinho está vazio.</p>
             <p className="mt-2 text-zinc-400">
               Adicione itens ao carrinho antes de prosseguir para o pagamento.
             </p>
             <Link
               to="/"
-              className="mt-6 inline-block rounded-sm bg-[#d4893f] px-6 py-2 text-xs font-medium text-[#1a110d] hover:bg-[#e09a52]"
+              className="mt-6 inline-block rounded-full lg:rounded-sm bg-[#d4893f] px-6 py-2.5 text-xs font-medium text-[#1a110d] hover:bg-[#e09a52]"
             >
               Voltar ao marketplace
             </Link>
           </div>
 
-          <div className="mt-24">
+          <div className="hidden lg:block mt-24">
             <TrustSection />
           </div>
         </main>
 
-        <div className="mx-auto max-w-[1200px] px-4 pb-6 xl:px-0">
+        <div className="hidden lg:block mx-auto max-w-[1200px] px-4 pb-6 xl:px-0">
           <Footer />
         </div>
       </div>
@@ -112,58 +115,71 @@ export function CheckoutPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#1a110d] font-mono text-zinc-100">
-      <Header />
+      {/* Mobile Checkout View (< lg) */}
+      <MobileCheckout
+        finalTotal={finalTotal}
+        selectedWallet={selectedWallet}
+        onSelectWallet={setSelectedWallet}
+        onConfirmOrder={handleConfirmOrder}
+        isPending={createOrderMutation.isPending}
+        isError={createOrderMutation.isError}
+      />
 
-      <main className="mx-auto max-w-[1200px] px-4 pt-6 xl:px-0">
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="text-[11px] text-zinc-100 mb-4">
-          <ol className="flex items-center gap-1">
-            <li>
-              <Link to="/" className="hover:text-[#d4893f]">
-                Início
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li>
-              <Link to="/" className="hover:text-[#d4893f]">
-                Mercado
-              </Link>
-            </li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page">Pagamento</li>
-          </ol>
-        </nav>
+      {/* Desktop Checkout View (>= lg) */}
+      <div className="hidden lg:block">
+        <Header />
 
-        {/* 2 columns layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 items-start">
-          {/* Left: Perfil do colecionador */}
-          <div className="min-w-0">
-            <CheckoutForm formId="checkout-form" onSubmit={handleFormSubmit} />
+        <main className="mx-auto max-w-[1200px] px-4 pt-6 xl:px-0">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="text-[11px] text-zinc-100 mb-4">
+            <ol className="flex items-center gap-1">
+              <li>
+                <Link to="/" className="hover:text-[#d4893f]">
+                  Início
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li>
+                <Link to="/" className="hover:text-[#d4893f]">
+                  Mercado
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page">Pagamento</li>
+            </ol>
+          </nav>
+
+          {/* 2 columns layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 items-start">
+            {/* Left: Perfil do colecionador */}
+            <div className="min-w-0">
+              <CheckoutForm formId="checkout-form" onSubmit={handleFormSubmit} />
+            </div>
+
+            {/* Right: Seus NFTs and Wallet */}
+            <CheckoutSummary
+              items={items}
+              total={total}
+              networkFee={NETWORK_FEE}
+              finalTotal={finalTotal}
+              selectedWallet={selectedWallet}
+              onSelectWallet={setSelectedWallet}
+              isPending={createOrderMutation.isPending}
+              isError={createOrderMutation.isError}
+              formId="checkout-form"
+            />
           </div>
 
-          {/* Right: Seus NFTs and Wallet */}
-          <CheckoutSummary
-            items={items}
-            total={total}
-            networkFee={NETWORK_FEE}
-            finalTotal={finalTotal}
-            selectedWallet={selectedWallet}
-            onSelectWallet={setSelectedWallet}
-            isPending={createOrderMutation.isPending}
-            isError={createOrderMutation.isError}
-            formId="checkout-form"
-          />
-        </div>
+          {/* Trust & Newsletter section */}
+          <div className="mt-24">
+            <TrustSection />
+          </div>
+        </main>
 
-        {/* Trust & Newsletter section */}
-        <div className="mt-24">
-          <TrustSection />
+        {/* Footer */}
+        <div className="mx-auto max-w-[1200px] px-4 pb-6 xl:px-0">
+          <Footer />
         </div>
-      </main>
-
-      {/* Footer */}
-      <div className="mx-auto max-w-[1200px] px-4 pb-6 xl:px-0">
-        <Footer />
       </div>
     </div>
   );

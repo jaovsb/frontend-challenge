@@ -32,7 +32,7 @@ export function PasswordField({
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
-        className="w-full bg-[#1a110d] border border-[#3a2416] text-xs text-zinc-100 placeholder:text-zinc-500 h-10 px-3 pr-10 rounded-none focus:outline-none focus:border-[#d4893f]"
+        className="w-full bg-[#1a110d] border border-[#3a2416] text-xs text-zinc-100 placeholder:text-zinc-500 h-12 lg:h-10 px-4 lg:px-3 pr-10 rounded-xl lg:rounded-none focus:outline-none focus:border-[#d4893f]"
       />
       {showToggle && (
         <button

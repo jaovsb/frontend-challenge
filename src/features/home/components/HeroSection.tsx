@@ -59,7 +59,7 @@ export function HeroSection() {
               {/* Secondary Overlapping Thumbnail */}
               <div className="absolute -bottom-1.5 -left-3 overflow-hidden rounded-xl border-2 border-[#2a170e] bg-[#241612] p-0.5 shadow-lg">
                 <img
-                  src="/assets/nfts/ape-purple.png"
+                  src="/assets/nfts/ape-gray.png"
                   alt="Sage Nomad"
                   className="size-10 sm:size-12 rounded-lg object-cover"
                 />
