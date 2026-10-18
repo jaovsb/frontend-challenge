@@ -8,6 +8,7 @@ import { NftDetailsPage } from "@/features/nfts/pages/NftDetailsPage";
 import { CartPage } from "@/features/cart/pages/CartPage";
 import App from "@/App";
 import { CheckoutPage } from "@/features/checkout/pages/CheckoutPage";
+import { OrderConfirmationPage } from "@/features/checkout/pages/OrderConfirmationPage";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -37,11 +38,18 @@ const checkoutRoute = createRoute({
   component: CheckoutPage,
 });
 
+const orderConfirmationRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/order-confirmation",
+  component: OrderConfirmationPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   nftDetailsRoute,
   cartRoute,
   checkoutRoute,
+  orderConfirmationRoute,
 ]);
 
 export const router = createRouter({
