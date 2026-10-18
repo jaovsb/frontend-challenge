@@ -6,6 +6,7 @@ import { RouterProvider } from '@tanstack/react-router'
 import { router } from './app/router.tsx'
 import { worker } from './mocks/browser.ts'
 import { CartProvider } from "@/features/cart/CartProvider";
+import { AuthProvider } from "@/features/auth/AuthProvider";
 import './index.css'
 
 async function bootstrap() {
@@ -16,9 +17,11 @@ async function bootstrap() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <CartProvider>
-          <RouterProvider router={router} />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <RouterProvider router={router} />
+          </CartProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </StrictMode>
   );

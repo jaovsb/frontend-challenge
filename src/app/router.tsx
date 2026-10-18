@@ -9,6 +9,8 @@ import { CartPage } from "@/features/cart/pages/CartPage";
 import App from "@/App";
 import { CheckoutPage } from "@/features/checkout/pages/CheckoutPage";
 import { OrderConfirmationPage } from "@/features/checkout/pages/OrderConfirmationPage";
+import { LoginPage } from "@/features/auth/pages/LoginPage";
+import { RegisterPage } from "@/features/auth/pages/RegisterPage";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -44,12 +46,26 @@ const orderConfirmationRoute = createRoute({
   component: OrderConfirmationPage,
 });
 
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: LoginPage,
+});
+
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/register",
+  component: RegisterPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   nftDetailsRoute,
   cartRoute,
   checkoutRoute,
   orderConfirmationRoute,
+  loginRoute,
+  registerRoute,
 ]);
 
 export const router = createRouter({

@@ -2,6 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useCart } from "@/features/cart/cart-context";
 import { useCreateOrder } from "@/features/checkout/mutations";
+import { Header } from "@/features/home/components/Header";
+import { TrustSection } from "@/features/home/components/TrustSection";
+import { Footer } from "@/features/home/components/Footer";
+import { CheckoutForm } from "@/features/checkout/components/CheckoutForm";
+import { CheckoutSummary } from "@/features/checkout/components/CheckoutSummary";
 
 const NETWORK_FEE = 0.016;
 
@@ -11,22 +16,57 @@ export function CheckoutPage() {
   const createOrderMutation = useCreateOrder();
 
   const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [selectedWallet, setSelectedWallet] = useState("coinbase");
 
   if (items.length === 0) {
     return (
-      <main>
-        <p>Seu carrinho está vazio.</p>
+      <div className="min-h-screen overflow-x-hidden bg-[#1a110d] font-mono text-zinc-100">
+        <Header />
+        <main className="mx-auto max-w-[1200px] px-4 pt-6 xl:px-0">
+          <nav aria-label="Breadcrumb" className="text-[11px] text-zinc-100">
+            <ol className="flex items-center gap-1">
+              <li>
+                <Link to="/" className="hover:text-[#d4893f]">
+                  Início
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li>
+                <Link to="/" className="hover:text-[#d4893f]">
+                  Mercado
+                </Link>
+              </li>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page">Pagamento</li>
+            </ol>
+          </nav>
 
-        <Link to="/">
-          Voltar ao marketplace
-        </Link>
-      </main>
+          <div className="my-16 rounded-sm bg-[#241612] p-8 text-center text-xs text-zinc-400">
+            <p className="text-sm font-bold text-zinc-200">Seu carrinho está vazio.</p>
+            <p className="mt-2 text-zinc-400">
+              Adicione itens ao carrinho antes de prosseguir para o pagamento.
+            </p>
+            <Link
+              to="/"
+              className="mt-6 inline-block rounded-sm bg-[#d4893f] px-6 py-2 text-xs font-medium text-[#1a110d] hover:bg-[#e09a52]"
+            >
+              Voltar ao marketplace
+            </Link>
+          </div>
+
+          <div className="mt-24">
+            <TrustSection />
+          </div>
+        </main>
+
+        <div className="mx-auto max-w-[1200px] px-4 pb-6 xl:px-0">
+          <Footer />
+        </div>
+      </div>
     );
   }
 
-  const finalTotal = Number(
-    (total + NETWORK_FEE).toFixed(3),
-  );
+  const finalTotal = Number((total + NETWORK_FEE).toFixed(3));
 
   function handleConfirmOrder() {
     createOrderMutation.mutate(
@@ -42,7 +82,11 @@ export function CheckoutPage() {
         onSuccess: (order) => {
           sessionStorage.setItem(
             "lastOrder",
-            JSON.stringify(order),
+            JSON.stringify({
+              ...order,
+              purchasedItems: items,
+              selectedWallet,
+            }),
           );
 
           clearCart();
@@ -55,35 +99,66 @@ export function CheckoutPage() {
     );
   }
 
+  function handleFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    handleConfirmOrder();
+  }
+
   return (
-    <main>
-      <h1>Pagamento</h1>
+    <div className="min-h-screen overflow-x-hidden bg-[#1a110d] font-mono text-zinc-100">
+      <Header />
 
-      <p>
-        {items.reduce(
-          (sum, item) => sum + item.quantity,
-          0,
-        )}{" "}
-        produto(s)
-      </p>
+      <main className="mx-auto max-w-[1200px] px-4 pt-6 xl:px-0">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="text-[11px] text-zinc-100 mb-4">
+          <ol className="flex items-center gap-1">
+            <li>
+              <Link to="/" className="hover:text-[#d4893f]">
+                Início
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li>
+              <Link to="/" className="hover:text-[#d4893f]">
+                Mercado
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page">Pagamento</li>
+          </ol>
+        </nav>
 
-      <p>Subtotal: {total.toFixed(2)} ETH</p>
-      <p>Taxa de rede: {NETWORK_FEE} ETH</p>
-      <p>Total: {finalTotal} ETH</p>
+        {/* 2 columns layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 items-start">
+          {/* Left: Perfil do colecionador */}
+          <div className="min-w-0">
+            <CheckoutForm formId="checkout-form" onSubmit={handleFormSubmit} />
+          </div>
 
-      <button
-        type="button"
-        onClick={handleConfirmOrder}
-        disabled={createOrderMutation.isPending}
-      >
-        {createOrderMutation.isPending
-          ? "Processando..."
-          : "Confirmar pedido"}
-      </button>
+          {/* Right: Seus NFTs and Wallet */}
+          <CheckoutSummary
+            items={items}
+            total={total}
+            networkFee={NETWORK_FEE}
+            finalTotal={finalTotal}
+            selectedWallet={selectedWallet}
+            onSelectWallet={setSelectedWallet}
+            isPending={createOrderMutation.isPending}
+            isError={createOrderMutation.isError}
+            formId="checkout-form"
+          />
+        </div>
 
-      {createOrderMutation.isError && (
-        <p>Não foi possível confirmar o pedido.</p>
-      )}
-    </main>
+        {/* Trust & Newsletter section */}
+        <div className="mt-24">
+          <TrustSection />
+        </div>
+      </main>
+
+      {/* Footer */}
+      <div className="mx-auto max-w-[1200px] px-4 pb-6 xl:px-0">
+        <Footer />
+      </div>
+    </div>
   );
 }
