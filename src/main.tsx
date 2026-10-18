@@ -14,6 +14,9 @@ async function bootstrap() {
     onUnhandledFrame: "bypass",
   });
 
+  const { startRealtime } = await import("./realtime/socket");
+  startRealtime();
+
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
