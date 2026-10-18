@@ -18,6 +18,8 @@ import { PromoSection } from "@/features/home/components/PromoSection";
 import { MintingDiary } from "@/features/home/components/MintingDiary";
 import { TrustSection } from "@/features/home/components/TrustSection";
 import { Footer } from "@/features/home/components/Footer";
+import { MobileHomeHeader } from "@/features/home/components/MobileHomeHeader";
+import { MobileBottomNav } from "@/features/home/components/MobileBottomNav";
 
 const PAGE_SIZE = 6;
 
@@ -67,6 +69,8 @@ function App() {
       ? page
       : 1;
   });
+
+  const [mobileTab, setMobileTab] = useState<"all" | "new" | "trending">("all");
 
   const filteredNfts = useMemo(() => {
     const nfts = data ?? [];
@@ -172,6 +176,13 @@ function App() {
   );
 
   useEffect(() => {
+    // App também é renderizado como background visual
+    // nas rotas /login e /register.
+    // Só a Home real deve sincronizar filtros com a URL.
+    if (window.location.pathname !== "/") {
+      return;
+    }
+
     const params = new URLSearchParams();
 
     if (searchTerm.trim()) {
@@ -205,9 +216,7 @@ function App() {
     window.history.replaceState(
       null,
       "",
-      query
-        ? `/?${query}`
-        : "/",
+      query ? `/?${query}` : "/",
     );
   }, [
     searchTerm,
@@ -241,18 +250,82 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#1a110d] font-mono text-zinc-100">
-      <Header />
+    <div className="min-h-screen overflow-x-hidden bg-[#1a110d] font-mono text-zinc-100 pb-20 lg:pb-0">
+      {/* Desktop Header (>= lg) */}
+      <div className="hidden lg:block">
+        <Header />
+      </div>
+
+      {/* Mobile Header (< lg) */}
+      <MobileHomeHeader
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        minPrice={minPrice}
+        maxPrice={maxPrice}
+        onApplyPrice={handleApplyPrice}
+        sort={sort}
+        onSortChange={handleSortChange}
+      />
 
       <main>
         <HeroSection />
 
+        {/* Mobile Tabs Row (< lg) */}
+        <div className="block lg:hidden mx-auto max-w-[1200px] px-4 mt-4">
+          <div className="flex items-center gap-5 text-xs font-mono border-b border-[#2e1d16] pb-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("all");
+                setSort("recent");
+              }}
+              className={`pb-1 transition-colors ${
+                mobileTab === "all"
+                  ? "border-b-2 border-[#d4893f] font-bold text-[#d4893f]"
+                  : "text-zinc-300 hover:text-zinc-100"
+              }`}
+            >
+              Todos os NFTs
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("new");
+                setSort("recent");
+              }}
+              className={`pb-1 transition-colors ${
+                mobileTab === "new"
+                  ? "border-b-2 border-[#d4893f] font-bold text-[#d4893f]"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              Novos lançamentos
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab("trending");
+                setSort("price-desc");
+              }}
+              className={`pb-1 transition-colors ${
+                mobileTab === "trending"
+                  ? "border-b-2 border-[#d4893f] font-bold text-[#d4893f]"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              Em alta
+            </button>
+          </div>
+        </div>
+
         <section
+          id="catalog-section"
           aria-label="Catálogo de NFTs"
-          className="mx-auto mt-20 max-w-[1200px] px-4 xl:px-0"
+          className="mx-auto mt-4 lg:mt-20 max-w-[1200px] px-4 xl:px-0"
         >
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[300px_1fr]">
-            <div className="flex flex-col gap-6">
+            {/* Desktop Sidebar (>= lg) */}
+            <div className="hidden lg:flex flex-col gap-6">
               <CatalogSidebar
                 initialMinPrice={minPrice}
                 initialMaxPrice={maxPrice}
@@ -265,16 +338,19 @@ function App() {
             </div>
 
             <div className="min-w-0">
-              <CatalogToolbar
-                searchTerm={searchTerm}
-                sort={sort}
-                onSearchChange={
-                  handleSearchChange
-                }
-                onSortChange={
-                  handleSortChange
-                }
-              />
+              {/* Desktop Toolbar (>= lg) */}
+              <div className="hidden lg:block">
+                <CatalogToolbar
+                  searchTerm={searchTerm}
+                  sort={sort}
+                  onSearchChange={
+                    handleSearchChange
+                  }
+                  onSortChange={
+                    handleSortChange
+                  }
+                />
+              </div>
 
               {isLoading && (
                 <p
@@ -308,7 +384,7 @@ function App() {
                 !isError &&
                 visibleNfts.length >
                   0 && (
-                  <div className="mt-6 grid grid-cols-1 justify-items-center gap-10 sm:grid-cols-2 lg:grid-cols-3 lg:justify-items-start">
+                  <div className="mt-4 lg:mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 lg:gap-10">
                     {visibleNfts.map(
                       (nft) => (
                         <NftCard
@@ -326,7 +402,7 @@ function App() {
                   PAGE_SIZE && (
                   <nav
                     aria-label="Paginação"
-                    className="mt-10 flex justify-end"
+                    className="mt-6 lg:mt-10 flex justify-center lg:justify-end"
                   >
                     <ul className="flex items-center gap-2 text-[11px]">
                       {pages.map(
@@ -390,22 +466,27 @@ function App() {
           </div>
         </section>
 
-        <div className="mt-24">
+        {/* Desktop-only supplementary sections (>= lg) */}
+        <div className="hidden lg:block mt-24">
           <PromoSection />
         </div>
 
-        <div className="mt-28">
+        <div className="hidden lg:block mt-28">
           <MintingDiary />
         </div>
 
-        <div className="mx-auto mt-24 max-w-[1200px] px-4 xl:px-0">
+        <div className="hidden lg:block mx-auto mt-24 max-w-[1200px] px-4 xl:px-0">
           <TrustSection />
         </div>
       </main>
 
-      <div className="mx-auto max-w-[1200px] px-4 pb-6 xl:px-0">
+      {/* Desktop Footer (>= lg) */}
+      <div className="hidden lg:block mx-auto max-w-[1200px] px-4 pb-6 xl:px-0">
         <Footer />
       </div>
+
+      {/* Mobile Bottom Navigation (< lg) */}
+      <MobileBottomNav activeTab="home" />
     </div>
   );
 }

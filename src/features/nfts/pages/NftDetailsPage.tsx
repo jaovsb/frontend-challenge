@@ -9,13 +9,16 @@ import { NftGallery } from "@/features/nfts/components/NftGallery";
 import { NftPurchasePanel } from "@/features/nfts/components/NftPurchasePanel";
 import { NftDetailsTabs } from "@/features/nfts/components/NftDetailsTabs";
 import { MoreFromCollection } from "@/features/nfts/components/MoreFromCollection";
+import { MobileNftDetails } from "@/features/nfts/components/MobileNftDetails";
 
 function PageShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#1a110d] font-mono text-zinc-100">
-      <Header />
-      <main className="mx-auto max-w-[1200px] px-4 pt-6 xl:px-0">{children}</main>
-      <div className="mx-auto mt-24 max-w-[1200px] px-4 pb-6 xl:px-0">
+      <div className="hidden lg:block">
+        <Header />
+      </div>
+      <main className="mx-auto max-w-[1200px] px-0 lg:px-4 pt-0 lg:pt-6 xl:px-0">{children}</main>
+      <div className="hidden lg:block mx-auto mt-24 max-w-[1200px] px-4 pb-6 xl:px-0">
         <TrustSection />
         <Footer />
       </div>
@@ -71,32 +74,38 @@ export function NftDetailsPage() {
 
   return (
     <PageShell>
-      <nav aria-label="Breadcrumb" className="text-[11px] text-zinc-100">
-        <ol className="flex items-center gap-1">
-          <li>
-            <Link to="/" className="hover:text-[#d4893f]">
-              Início
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page">Mercado</li>
-        </ol>
-      </nav>
+      {/* Mobile View (< lg) */}
+      <MobileNftDetails nft={nft} />
 
-      <section
-        aria-label={`Detalhes de ${nft.name}`}
-        className="mt-3 grid grid-cols-1 gap-8 lg:grid-cols-[570px_1fr]"
-      >
-        <NftGallery nft={nft} />
-        <NftPurchasePanel nft={nft} />
-      </section>
+      {/* Desktop View (>= lg) */}
+      <div className="hidden lg:block">
+        <nav aria-label="Breadcrumb" className="text-[11px] text-zinc-100">
+          <ol className="flex items-center gap-1">
+            <li>
+              <Link to="/" className="hover:text-[#d4893f]">
+                Início
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page">Mercado</li>
+          </ol>
+        </nav>
 
-      <div className="mt-16">
-        <NftDetailsTabs nft={nft} />
-      </div>
+        <section
+          aria-label={`Detalhes de ${nft.name}`}
+          className="mt-3 grid grid-cols-1 gap-8 lg:grid-cols-[570px_1fr]"
+        >
+          <NftGallery nft={nft} />
+          <NftPurchasePanel nft={nft} />
+        </section>
 
-      <div className="mt-20">
-        <MoreFromCollection currentNftId={nft.id} />
+        <div className="mt-16">
+          <NftDetailsTabs nft={nft} />
+        </div>
+
+        <div className="mt-20">
+          <MoreFromCollection currentNftId={nft.id} />
+        </div>
       </div>
     </PageShell>
   );
