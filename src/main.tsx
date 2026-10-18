@@ -5,6 +5,7 @@ import { queryClient } from './app/query-client.ts'
 import { RouterProvider } from '@tanstack/react-router'
 import { router } from './app/router.tsx'
 import { worker } from './mocks/browser.ts'
+import { CartProvider } from "@/features/cart/CartProvider";
 import './index.css'
 
 async function bootstrap() {
@@ -15,9 +16,11 @@ async function bootstrap() {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <CartProvider>
+          <RouterProvider router={router} />
+        </CartProvider>
       </QueryClientProvider>
-    </StrictMode>,
+    </StrictMode>
   );
 }
 
