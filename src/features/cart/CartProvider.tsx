@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Nft } from "@/contracts/nft";
+import { useAuth } from "@/features/auth/auth-context";
 import { CartContext } from "./cart-context";
 import type { CartItem } from "./types";
 
@@ -7,7 +8,9 @@ interface CartProviderProps {
   children: React.ReactNode;
 }
 
-const CART_STORAGE_KEY = "kurio-cart";
+interface IdentityCartProviderProps extends CartProviderProps {
+  storageKey: string;
+}
 
 function isCartItem(value: unknown): value is CartItem {
   if (typeof value !== "object" || value === null) return false;
@@ -28,11 +31,25 @@ function isCartItem(value: unknown): value is CartItem {
 }
 
 export function CartProvider({ children }: CartProviderProps) {
+  const { user } = useAuth();
+  const storageKey = `kurio-cart:${user?.id ?? "guest"}`;
+
+  // A new identity gets fresh state before its children render. The old cart
+  // can only persist to its own key; items never cross session boundaries.
+  // The ambiguous legacy "kurio-cart" key is intentionally ignored.
+  return (
+    <IdentityCartProvider key={storageKey} storageKey={storageKey}>
+      {children}
+    </IdentityCartProvider>
+  );
+}
+
+function IdentityCartProvider({ children, storageKey }: IdentityCartProviderProps) {
   const [items, setItems] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") return [];
 
     try {
-      const savedCart = window.localStorage.getItem(CART_STORAGE_KEY);
+      const savedCart = window.localStorage.getItem(storageKey);
       if (savedCart === null) return [];
 
       const parsed: unknown = JSON.parse(savedCart);
@@ -42,7 +59,7 @@ export function CartProvider({ children }: CartProviderProps) {
     }
 
     try {
-      window.localStorage.removeItem(CART_STORAGE_KEY);
+      window.localStorage.removeItem(storageKey);
     } catch {
       // Storage may be blocked by the browser.
     }
@@ -52,11 +69,11 @@ export function CartProvider({ children }: CartProviderProps) {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      window.localStorage.setItem(storageKey, JSON.stringify(items));
     } catch {
       // Keep the in-memory cart usable if persistence is unavailable.
     }
-  }, [items]);
+  }, [items, storageKey]);
 
   function addItem(nft: Nft, quantity = 1) {
     setItems((currentItems) => {

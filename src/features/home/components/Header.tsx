@@ -3,7 +3,12 @@ import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/features/auth/auth-context";
 import { useCart } from "@/features/cart/cart-context";
 
-const navItems = ["Início", "Mercado", "Criadores", "Aprenda"];
+const navItems = [
+  { label: "Início", hash: "" },
+  { label: "Mercado", hash: "catalog-section" },
+  { label: "Criadores", hash: "criadores" },
+  { label: "Aprenda", hash: "aprenda" },
+];
 
 export function Header() {
   const { itemCount } = useCart();
@@ -16,16 +21,19 @@ export function Header() {
   return (
     <header className="border-b border-[#2e1d16] bg-[#140d0a]">
       <div className="mx-auto grid h-14 max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center px-4 xl:px-0">
-        <a href="#" className="text-sm font-bold tracking-widest text-zinc-100">
+        <Link to="/" hash="" resetScroll className="text-sm font-bold tracking-widest text-zinc-100">
           KURIO
-        </a>
+        </Link>
 
         <nav aria-label="Navegação principal">
           <ul className="flex items-center gap-6 text-xs sm:gap-8">
             {navItems.map((item, index) => (
-              <li key={item}>
-                <a
-                  href="#"
+              <li key={item.label}>
+                <Link
+                  to="/"
+                  hash={item.hash}
+                  resetScroll
+                  hashScrollIntoView={{ behavior: "instant", block: "start" }}
                   aria-current={index === 0 ? "page" : undefined}
                   className={
                     index === 0
@@ -33,8 +41,8 @@ export function Header() {
                       : "text-zinc-300 hover:text-zinc-100"
                   }
                 >
-                  {item}
-                </a>
+                  {item.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -59,9 +67,12 @@ export function Header() {
           </Link>
               {isAuthenticated ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs text-zinc-100">
+              <Link
+                to="/profile"
+                className="inline-flex min-h-9 items-center text-xs text-zinc-100 hover:text-[#d4893f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d4893f]"
+              >
                 {user?.name}
-              </span>
+              </Link>
 
               <button
                 type="button"

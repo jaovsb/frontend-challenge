@@ -33,7 +33,7 @@ const articles = [
 
 export function MintingDiary() {
   return (
-    <section aria-labelledby="minting-diary-title" className="mx-auto max-w-[1200px] px-4 xl:px-0">
+    <section id="aprenda" aria-labelledby="minting-diary-title" className="mx-auto max-w-[1200px] px-4 xl:px-0">
       <header className="text-center">
         <h2 id="minting-diary-title" className="text-2xl font-bold text-zinc-100">
           Diário da Cunhagem

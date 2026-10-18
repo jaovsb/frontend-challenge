@@ -1,9 +1,9 @@
 import {
-  useEffect,
   useMemo,
   useState,
 } from "react";
 import { ChevronRight } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { useNfts } from "@/features/nfts/queries";
 import { NftCard } from "@/features/nfts/components/NftCard";
 import { Header } from "@/features/home/components/Header";
@@ -12,6 +12,7 @@ import { CatalogSidebar } from "@/features/home/components/CatalogSidebar";
 import {
   CatalogToolbar,
   type CatalogSortOption,
+  type CatalogTab,
 } from "@/features/home/components/CatalogToolbar";
 import { FeaturedNftSection } from "@/features/home/components/FeaturedNftSection";
 import { PromoSection } from "@/features/home/components/PromoSection";
@@ -42,6 +43,7 @@ function getInitialSort(): CatalogSortOption {
 }
 
 function App() {
+  const navigate = useNavigate();
   const { data, isLoading, isError } = useNfts();
 
   const [searchTerm, setSearchTerm] = useState(
@@ -70,7 +72,7 @@ function App() {
       : 1;
   });
 
-  const [mobileTab, setMobileTab] = useState<"all" | "new" | "trending">("all");
+  const [mobileTab, setMobileTab] = useState<CatalogTab>("all");
 
   const filteredNfts = useMemo(() => {
     const nfts = data ?? [];
@@ -175,62 +177,62 @@ function App() {
     (_, index) => index + 1,
   );
 
-  useEffect(() => {
-    // App também é renderizado como background visual
-    // nas rotas /login e /register.
-    // Só a Home real deve sincronizar filtros com a URL.
-    if (window.location.pathname !== "/") {
-      return;
-    }
-
+  function updateCatalogUrl(
+    changes: Partial<{
+      searchTerm: string;
+      sort: CatalogSortOption;
+      minPrice: string;
+      maxPrice: string;
+      page: number;
+    }>,
+    scrollToCatalog = false,
+  ) {
+    const next = { searchTerm, sort, minPrice, maxPrice, page: safeCurrentPage, ...changes };
     const params = new URLSearchParams();
 
-    if (searchTerm.trim()) {
+    if (next.searchTerm.trim()) {
       params.set(
         "q",
-        searchTerm.trim(),
+        next.searchTerm.trim(),
       );
     }
 
-    if (sort !== "recent") {
-      params.set("sort", sort);
+    if (next.sort !== "recent") {
+      params.set("sort", next.sort);
     }
 
-    if (minPrice) {
-      params.set("min", minPrice);
+    if (next.minPrice) {
+      params.set("min", next.minPrice);
     }
 
-    if (maxPrice) {
-      params.set("max", maxPrice);
+    if (next.maxPrice) {
+      params.set("max", next.maxPrice);
     }
 
-    if (safeCurrentPage > 1) {
+    if (next.page > 1) {
       params.set(
         "page",
-        String(safeCurrentPage),
+        String(next.page),
       );
     }
 
+    // Catalog edits never reuse an editorial anchor or trigger the router's
+    // default scroll reset. Only pagination intentionally scrolls the catalog.
     const query = params.toString();
-
-    window.history.replaceState(
-      null,
-      "",
-      query ? `/?${query}` : "/",
-    );
-  }, [
-    searchTerm,
-    sort,
-    minPrice,
-    maxPrice,
-    safeCurrentPage,
-  ]);
+    void navigate({
+      href: `${query ? `/?${query}` : "/"}${scrollToCatalog ? "#catalog-section" : ""}`,
+      replace: true,
+      resetScroll: false,
+      hashScrollIntoView: scrollToCatalog ? { behavior: "instant", block: "start" } : false,
+    });
+  }
 
   function handleSearchChange(
     value: string,
   ) {
     setSearchTerm(value);
     setCurrentPage(1);
+    updateCatalogUrl({ searchTerm: value, page: 1 });
   }
 
   function handleSortChange(
@@ -238,6 +240,7 @@ function App() {
   ) {
     setSort(value);
     setCurrentPage(1);
+    updateCatalogUrl({ sort: value, page: 1 });
   }
 
   function handleApplyPrice(
@@ -247,6 +250,17 @@ function App() {
     setMinPrice(min);
     setMaxPrice(max);
     setCurrentPage(1);
+    updateCatalogUrl({ minPrice: min, maxPrice: max, page: 1 });
+  }
+
+  function handleTabChange(tab: CatalogTab) {
+    setMobileTab(tab);
+    handleSortChange(tab === "trending" ? "price-desc" : "recent");
+  }
+
+  function handlePageChange(page: number) {
+    setCurrentPage(page);
+    updateCatalogUrl({ page }, true);
   }
 
   return (
@@ -276,8 +290,7 @@ function App() {
             <button
               type="button"
               onClick={() => {
-                setMobileTab("all");
-                setSort("recent");
+                handleTabChange("all");
               }}
               className={`pb-1 transition-colors ${
                 mobileTab === "all"
@@ -290,8 +303,7 @@ function App() {
             <button
               type="button"
               onClick={() => {
-                setMobileTab("new");
-                setSort("recent");
+                handleTabChange("new");
               }}
               className={`pb-1 transition-colors ${
                 mobileTab === "new"
@@ -304,8 +316,7 @@ function App() {
             <button
               type="button"
               onClick={() => {
-                setMobileTab("trending");
-                setSort("price-desc");
+                handleTabChange("trending");
               }}
               className={`pb-1 transition-colors ${
                 mobileTab === "trending"
@@ -341,6 +352,8 @@ function App() {
               {/* Desktop Toolbar (>= lg) */}
               <div className="hidden lg:block">
                 <CatalogToolbar
+                  activeTab={mobileTab}
+                  onTabChange={handleTabChange}
                   searchTerm={searchTerm}
                   sort={sort}
                   onSearchChange={
@@ -411,7 +424,7 @@ function App() {
                             <button
                               type="button"
                               onClick={() =>
-                                setCurrentPage(
+                                handlePageChange(
                                   page,
                                 )
                               }
@@ -443,7 +456,7 @@ function App() {
                             totalPages
                           }
                           onClick={() =>
-                            setCurrentPage(
+                            handlePageChange(
                               Math.min(
                                 safeCurrentPage +
                                   1,

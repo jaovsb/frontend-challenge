@@ -4,16 +4,26 @@ export type CatalogSortOption =
   | "price-desc"
   | "name-asc";
 
+export type CatalogTab = "all" | "new" | "trending";
+
 interface CatalogToolbarProps {
+  activeTab: CatalogTab;
+  onTabChange: (tab: CatalogTab) => void;
   searchTerm: string;
   sort: CatalogSortOption;
   onSearchChange: (value: string) => void;
   onSortChange: (value: CatalogSortOption) => void;
 }
 
-const tabs = ["Todos os NFTs", "Novos lançamentos", "Em alta"];
+const tabs = [
+  { label: "Todos os NFTs", value: "all" },
+  { label: "Novos lançamentos", value: "new" },
+  { label: "Em alta", value: "trending" },
+] as const;
 
 export function CatalogToolbar({
+  activeTab,
+  onTabChange,
   searchTerm,
   sort,
   onSearchChange,
@@ -23,18 +33,19 @@ export function CatalogToolbar({
     <div className="flex flex-wrap items-center justify-between gap-4 text-[11px]">
       <nav aria-label="Abas do catálogo">
         <ul className="flex items-center gap-4">
-          {tabs.map((tab, index) => (
-            <li key={tab}>
+          {tabs.map((tab) => (
+            <li key={tab.value}>
               <button
                 type="button"
-                aria-pressed={index === 0}
+                aria-pressed={activeTab === tab.value}
+                onClick={() => onTabChange(tab.value)}
                 className={
-                  index === 0
+                  activeTab === tab.value
                     ? "border-b border-[#d4893f] pb-0.5 text-[#d4893f]"
                     : "text-zinc-300 hover:text-zinc-100"
                 }
               >
-                {tab}
+                {tab.label}
               </button>
             </li>
           ))}

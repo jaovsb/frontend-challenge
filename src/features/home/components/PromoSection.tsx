@@ -19,7 +19,7 @@ const promos = [
 
 export function PromoSection() {
   return (
-    <section aria-label="Destaques" className="mx-auto max-w-[1200px] px-4 xl:px-0">
+    <section id="criadores" aria-label="Destaques" className="mx-auto max-w-[1200px] px-4 xl:px-0">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         {promos.map((promo) => (
           <article key={promo.title[0]} className="grid grid-cols-[1fr_1fr] items-center">
