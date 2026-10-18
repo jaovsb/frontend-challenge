@@ -7,12 +7,12 @@ import type {
   RegisterInput,
   User,
 } from "@/contracts/auth";
-import type {
-  CreateOrderInput,
-  Order,
-} from "@/contracts/order";
-
-const ordersByIdempotencyKey = new Map<string, Order>();
+import {
+  createMockOrder,
+  getMockOrder,
+  getMockOrderByIdempotencyKey,
+  isCreateOrderInput,
+} from "./realtime";
 
 const sessions = new Map<string, string>();
 
@@ -117,38 +117,32 @@ export const handlers = [
     return HttpResponse.json(nft);
   }),
   http.post("/api/orders", async ({ request }) => {
-  const input = (await request.json()) as CreateOrderInput;
+    const input: unknown = await request.json().catch(() => null);
+    if (!isCreateOrderInput(input)) {
+      return HttpResponse.json({ error: "Invalid order payload" }, { status: 400 });
+    }
 
-  if (!input.items.length) {
-    return HttpResponse.json(
-      { error: "Order must contain at least one item" },
-      { status: 400 },
-    );
-  }
+    const existing = getMockOrderByIdempotencyKey(input.idempotencyKey);
+    if (existing) {
+      const sameItems = existing.input.items.length === input.items.length &&
+        existing.input.items.every((item, index) =>
+          item.nftId === input.items[index].nftId &&
+          item.quantity === input.items[index].quantity,
+        );
+      if (existing.input.total !== input.total || !sameItems) {
+        return HttpResponse.json({ error: "Idempotency key already used for another payload" }, { status: 409 });
+      }
+      return HttpResponse.json(existing.order);
+    }
 
-  const existingOrder = ordersByIdempotencyKey.get(
-    input.idempotencyKey,
-  );
-
-  if (existingOrder) {
-    return HttpResponse.json(existingOrder);
-  }
-
-  const order: Order = {
-    id: `order-${Date.now()}`,
-    transactionId: `tx-${Date.now()}`,
-    status: "confirmed",
-    total: input.total,
-    createdAt: new Date().toISOString(),
-  };
-
-  ordersByIdempotencyKey.set(
-    input.idempotencyKey,
-    order,
-  );
-
-  return HttpResponse.json(order, {
-    status: 201,
-  });
-}),
+    // Optional deterministic failure scenario for mock verification; normal checkout confirms.
+    const outcome = request.headers.get("x-mock-order-result") === "rejected" ? "rejected" : "confirmed";
+    return HttpResponse.json(createMockOrder(input, outcome), { status: 201 });
+  }),
+  http.get("/api/orders/:id", ({ params }) => {
+    const order = getMockOrder(String(params.id));
+    return order
+      ? HttpResponse.json(order)
+      : HttpResponse.json({ error: "Order not found" }, { status: 404 });
+  }),
 ];

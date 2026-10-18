@@ -15,3 +15,8 @@ export async function createOrder(
 
   return response.data;
 }
+
+export async function getOrderById(id: string, signal?: AbortSignal): Promise<Order> {
+  const response = await api.get<Order>(`/orders/${encodeURIComponent(id)}`, { signal });
+  return response.data;
+}

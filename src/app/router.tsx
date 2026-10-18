@@ -11,6 +11,8 @@ import { CheckoutPage } from "@/features/checkout/pages/CheckoutPage";
 import { OrderConfirmationPage } from "@/features/checkout/pages/OrderConfirmationPage";
 import { LoginPage } from "@/features/auth/pages/LoginPage";
 import { RegisterPage } from "@/features/auth/pages/RegisterPage";
+import { CollectorProfilePage } from "@/features/profile/pages/CollectorProfilePage";
+import { WalletsPage } from "@/features/profile/pages/WalletsPage";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -58,6 +60,18 @@ const registerRoute = createRoute({
   component: RegisterPage,
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile",
+  component: CollectorProfilePage,
+});
+
+const walletsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile/wallets",
+  component: WalletsPage,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   nftDetailsRoute,
@@ -66,6 +80,8 @@ const routeTree = rootRoute.addChildren([
   orderConfirmationRoute,
   loginRoute,
   registerRoute,
+  profileRoute,
+  walletsRoute,
 ]);
 
 export const router = createRouter({

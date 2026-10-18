@@ -1,13 +1,29 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import type { Order } from "@/contracts/order";
+import { useCart } from "@/features/cart/cart-context";
+import { readLastOrder, useOrder } from "@/features/checkout/queries";
 import { OrderConfirmationCard } from "@/features/checkout/components/OrderConfirmationCard";
 
 export function OrderConfirmationPage() {
-  const storedOrder = sessionStorage.getItem("lastOrder");
+  const [receipt] = useState(readLastOrder);
+  const { data: order, isError, refetch } = useOrder(receipt?.id);
+  const { clearCart } = useCart();
+  const clearedOrderId = useRef<string | null>(null);
 
-  const order: Order | null = storedOrder ? JSON.parse(storedOrder) : null;
+  useEffect(() => {
+    if (!order || !receipt || order.status === "pending") return;
+    if (sessionStorage.getItem("kurio-checkout-idempotency-key") === order.idempotencyKey) {
+      sessionStorage.removeItem("kurio-checkout-idempotency-key");
+    }
+    if (order.status !== "confirmed" || clearedOrderId.current === order.id) return;
+    if (readLastOrder()?.cartCleared) return;
 
-  if (!order) {
+    clearedOrderId.current = order.id;
+    sessionStorage.setItem("lastOrder", JSON.stringify({ ...receipt, cartCleared: true }));
+    clearCart();
+  }, [order, receipt, clearCart]);
+
+  if (!receipt) {
     return (
       <main className="min-h-screen bg-[#140d0a] font-mono text-zinc-100 flex items-center justify-center p-4">
         <div className="rounded-sm border border-[#3a2416] bg-[#241612] p-8 text-center text-xs text-zinc-400 max-w-sm w-full">
@@ -28,9 +44,26 @@ export function OrderConfirmationPage() {
     );
   }
 
+  if (!order || isError) {
+    return (
+      <main className="min-h-screen bg-[#140d0a] font-mono text-zinc-100 flex items-center justify-center p-4 sm:p-8">
+        <div className="w-full max-w-[540px] rounded-sm border border-[#3a2416] bg-[#241612] p-8 text-center text-xs text-zinc-400">
+          <p role={isError ? "alert" : "status"}>
+            {isError ? "Não foi possível consultar o pedido. Seu carrinho foi preservado." : "Consultando o estado do pedido..."}
+          </p>
+          {isError && (
+            <button type="button" onClick={() => void refetch()} className="mt-4 text-[#d4893f] hover:underline">
+              Tentar novamente
+            </button>
+          )}
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#140d0a] font-mono text-zinc-100 flex items-center justify-center p-4 sm:p-8">
-      <OrderConfirmationCard order={order} />
+      <OrderConfirmationCard order={{ ...order, purchasedItems: receipt.purchasedItems, selectedWallet: receipt.selectedWallet }} />
     </main>
   );
 }

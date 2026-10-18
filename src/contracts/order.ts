@@ -9,10 +9,16 @@ export interface CreateOrderInput {
   idempotencyKey: string;
 }
 
-export interface Order {
+interface OrderBase {
   id: string;
-  transactionId: string;
-  status: "confirmed";
+  idempotencyKey: string;
   total: number;
   createdAt: string;
+  updatedAt: string;
 }
+
+export type Order = OrderBase & (
+  | { status: "pending"; transactionId?: never }
+  | { status: "confirmed"; transactionId: string }
+  | { status: "rejected"; transactionId?: never }
+);

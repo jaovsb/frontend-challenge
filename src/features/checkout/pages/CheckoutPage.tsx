@@ -11,11 +11,17 @@ import { CheckoutSummary } from "@/features/checkout/components/CheckoutSummary"
 const NETWORK_FEE = 0.016;
 
 export function CheckoutPage() {
-  const { items, total, clearCart } = useCart();
+  const { items, total } = useCart();
   const navigate = useNavigate();
   const createOrderMutation = useCreateOrder();
 
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey] = useState(() => {
+    const existing = sessionStorage.getItem("kurio-checkout-idempotency-key");
+    if (existing) return existing;
+    const key = crypto.randomUUID();
+    sessionStorage.setItem("kurio-checkout-idempotency-key", key);
+    return key;
+  });
   const [selectedWallet, setSelectedWallet] = useState("coinbase");
 
   if (items.length === 0) {
@@ -69,6 +75,7 @@ export function CheckoutPage() {
   const finalTotal = Number((total + NETWORK_FEE).toFixed(3));
 
   function handleConfirmOrder() {
+    if (createOrderMutation.isPending) return;
     createOrderMutation.mutate(
       {
         items: items.map((item) => ({
@@ -83,13 +90,12 @@ export function CheckoutPage() {
           sessionStorage.setItem(
             "lastOrder",
             JSON.stringify({
-              ...order,
+              id: order.id,
               purchasedItems: items,
               selectedWallet,
+              cartCleared: false,
             }),
           );
-
-          clearCart();
 
           navigate({
             to: "/order-confirmation",

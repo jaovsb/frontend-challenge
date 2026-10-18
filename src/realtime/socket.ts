@@ -16,6 +16,7 @@ export function startRealtime() {
 
   socket.on("connect", () => {
     console.info("[realtime] connected");
+    void queryClient.invalidateQueries({ queryKey: ["orders"] });
   });
 
   socket.on("nft.updated", async ({ id, changes }: NftUpdatedPayload) => {
@@ -29,6 +30,11 @@ export function startRealtime() {
     );
 
     console.info("[realtime] nft.updated", { id, changes });
+  });
+
+  socket.on("order.updated", (event) => {
+    void queryClient.invalidateQueries({ queryKey: ["orders", event.id], exact: true });
+    console.info("[realtime] order.updated", event);
   });
 
   socket.connect();

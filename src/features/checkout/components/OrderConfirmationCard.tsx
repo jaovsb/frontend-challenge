@@ -3,17 +3,16 @@ import { X } from "lucide-react";
 import type { Order } from "@/contracts/order";
 import type { CartItem } from "@/features/cart/types";
 
-interface ExtendedOrder extends Order {
+type ExtendedOrder = Order & {
   purchasedItems?: CartItem[];
   selectedWallet?: string;
-}
+};
 
 interface OrderConfirmationCardProps {
   order: ExtendedOrder;
 }
 
 function formatTx(tx: string) {
-  if (!tx) return "0xA91F...E82C";
   if (tx.startsWith("tx-")) {
     const hex = tx.replace("tx-", "");
     return `0x${hex.slice(0, 4).toUpperCase()}...${hex.slice(-4).toUpperCase()}`;
@@ -138,16 +137,24 @@ export function OrderConfirmationCard({ order }: OrderConfirmationCardProps) {
       </div>
 
       {/* Main message */}
-      <h1 className="text-center text-xs font-medium text-zinc-200">
-        Seus NFTs agora estão na sua carteira
-      </h1>
+      <div role={order.status === "rejected" ? "alert" : "status"} aria-atomic="true">
+        <h1 className="text-center text-xs font-medium text-zinc-200">
+          {order.status === "pending"
+            ? "Seu pedido está sendo processado"
+            : order.status === "rejected"
+              ? "Seu pedido foi recusado"
+              : "Seus NFTs agora estão na sua carteira"}
+        </h1>
+      </div>
 
       {/* Metadata bar */}
       <div className="my-5 grid grid-cols-4 border-y border-[#3a2416] py-3 text-center text-[10px]">
         <div className="border-r border-[#3a2416] px-1">
           <p className="text-[9px] text-zinc-400">ID da transação</p>
           <p className="mt-1 truncate font-bold text-zinc-100" title={order.transactionId}>
-            {formatTx(order.transactionId)}
+            {order.status === "confirmed"
+              ? formatTx(order.transactionId)
+              : order.status === "pending" ? "Aguardando confirmação" : "Não emitida"}
           </p>
         </div>
         <div className="border-r border-[#3a2416] px-1">
@@ -228,19 +235,24 @@ export function OrderConfirmationCard({ order }: OrderConfirmationCardProps) {
 
         {/* Confirmation text */}
         <p className="mx-auto mt-6 max-w-[400px] text-center text-[10px] leading-relaxed text-zinc-400">
-          Transação confirmada na Ethereum. A propriedade foi transferida para
-          sua carteira conectada e registrada na rede.
+          {order.status === "pending"
+            ? "Aguardando a confirmação do pagamento. Seus itens permanecem no carrinho. Esta página será atualizada automaticamente."
+            : order.status === "rejected"
+              ? "O pagamento foi recusado. Seus itens permanecem no carrinho para uma nova tentativa."
+              : "Transação confirmada na Ethereum. A propriedade foi transferida para sua carteira conectada e registrada na rede."}
         </p>
 
         {/* Visual Etherscan Button */}
-        <div className="mt-5 text-center">
-          <button
-            type="button"
-            className="rounded-sm bg-[#d4893f] px-6 py-2 text-xs font-bold text-[#1a110d] transition-colors hover:bg-[#e09a52]"
-          >
-            Ver no Etherscan
-          </button>
-        </div>
+        {order.status === "confirmed" && (
+          <div className="mt-5 text-center">
+            <button
+              type="button"
+              className="rounded-sm bg-[#d4893f] px-6 py-2 text-xs font-bold text-[#1a110d] transition-colors hover:bg-[#e09a52]"
+            >
+              Ver no Etherscan
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Bottom orange accent border */}
